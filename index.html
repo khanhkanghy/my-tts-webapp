@@ -3,72 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chuyển Văn Bản Thành Giọng Nói</title>
+    <title>Ứng dụng Chuyển Văn Bản Thành Giọng Nói</title>
     <!-- Tải Tailwind CSS từ CDN để dễ dàng tạo giao diện đẹp và responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Đảm bảo font Inter được sử dụng -->
+    <!-- Đảm bảo font Inter được sử dụng để có giao diện hiện đại -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Thiết lập font và màu nền cơ bản cho toàn bộ trang */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f2f5; /* Màu nền nhẹ nhàng */
+            background-color: #f0f2f5; /* Màu nền xám nhạt */
         }
+        /* Định nghĩa chiều rộng tối đa cho container chính của ứng dụng */
         .container {
-            max-width: 800px; /* Giới hạn chiều rộng của nội dung chính */
+            max-width: 800px; /* Giới hạn chiều rộng để nội dung không bị quá rộng trên màn hình lớn */
         }
+        /* Cho phép người dùng thay đổi kích thước chiều dọc của ô nhập liệu văn bản */
         textarea {
-            resize: vertical; /* Cho phép người dùng thay đổi kích thước chiều dọc của textarea */
+            resize: vertical; 
         }
-        /* Hiệu ứng loading */
+        /* Hiệu ứng loading spinner */
         .loader {
-            border: 4px solid #f3f3f3; /* Light grey */
-            border-top: 4px solid #3498db; /* Blue */
-            border-radius: 50%;
+            border: 4px solid #f3f3f3; /* Màu xám nhạt cho viền ngoài */
+            border-top: 4px solid #3498db; /* Màu xanh cho viền trên (tạo hiệu ứng quay) */
+            border-radius: 50%; /* Làm cho spinner tròn */
             width: 24px;
             height: 24px;
-            animation: spin 1s linear infinite;
-            display: none; /* Mặc định ẩn */
+            animation: spin 1s linear infinite; /* Áp dụng animation quay liên tục */
+            display: none; /* Mặc định ẩn, chỉ hiển thị khi đang xử lý */
         }
+        /* Keyframes cho animation quay của spinner */
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* Container cho bảng hiển thị các đoạn văn bản */
         .table-container {
-            max-height: 300px; /* Giới hạn chiều cao của bảng để có thể cuộn */
-            overflow-y: auto; /* Cho phép cuộn dọc */
-            border: 1px solid #e2e8f0; /* Border cho container */
-            border-radius: 0.375rem; /* rounded-md */
+            max-height: 300px; /* Giới hạn chiều cao để bảng có thể cuộn nếu có nhiều đoạn */
+            overflow-y: auto; /* Cho phép cuộn dọc khi nội dung vượt quá chiều cao */
+            border: 1px solid #e2e8f0; /* Viền nhẹ cho container */
+            border-radius: 0.375rem; /* Bo tròn góc */
         }
+        /* Thiết lập bảng */
         table {
-            width: 100%;
+            width: 100%; /* Chiếm toàn bộ chiều rộng của container */
             border-collapse: collapse; /* Loại bỏ khoảng cách giữa các ô */
         }
+        /* Định dạng cho tiêu đề bảng và ô dữ liệu */
         th, td {
-            padding: 0.75rem; /* p-3 */
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0; /* border-b */
+            padding: 0.75rem; /* Khoảng cách đệm bên trong ô */
+            text-align: left; /* Căn lề trái */
+            border-bottom: 1px solid #e2e8f0; /* Đường kẻ dưới mỗi hàng */
         }
+        /* Định dạng riêng cho tiêu đề bảng */
         th {
-            background-color: #f8fafc; /* bg-gray-50 */
-            font-weight: 600; /* font-semibold */
-            color: #4a5568; /* text-gray-700 */
-            position: sticky; /* Giữ tiêu đề bảng khi cuộn */
-            top: 0;
-            z-index: 10;
+            background-color: #f8fafc; /* Màu nền xám rất nhạt */
+            font-weight: 600; /* Chữ đậm */
+            color: #4a5568; /* Màu chữ xám đậm */
+            position: sticky; /* Giữ tiêu đề bảng cố định khi cuộn */
+            top: 0; /* Đặt ở trên cùng */
+            z-index: 10; /* Đảm bảo tiêu đề nằm trên các nội dung khác khi cuộn */
         }
+        /* Loại bỏ đường kẻ dưới cùng của hàng cuối cùng trong bảng */
         tbody tr:last-child td {
-            border-bottom: none; /* Loại bỏ border dưới cùng của hàng cuối */
+            border-bottom: none; 
         }
+        /* Hiệu ứng hover khi di chuột qua các hàng trong bảng */
         tbody tr:hover {
-            background-color: #f0f4f8; /* Hiệu ứng hover */
+            background-color: #f0f4f8; /* Thay đổi màu nền khi hover */
         }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
     <div class="container bg-white p-8 rounded-lg shadow-xl w-full">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Chuyển Văn Bản Thành Giọng Nói</h1>
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Ứng dụng Chuyển Văn Bản Thành Giọng Nói</h1>
 
-        <!-- Phần tải lên tệp -->
+        <!-- Phần tải lên tệp văn bản -->
         <div class="mb-6 border p-4 rounded-md bg-gray-50">
             <label for="fileInput" class="block text-gray-700 text-sm font-semibold mb-2">Tải lên tệp văn bản (.txt):</label>
             <input type="file" id="fileInput" accept=".txt" class="w-full text-gray-700">
@@ -79,7 +89,7 @@
             </button>
         </div>
 
-        <!-- Phần hiển thị danh sách đoạn văn bản -->
+        <!-- Phần hiển thị danh sách các đoạn văn bản đã xử lý -->
         <div class="mb-6">
             <label class="block text-gray-700 text-sm font-semibold mb-2">Các đoạn văn bản đã xử lý:</label>
             <div id="textSegmentsContainer" class="table-container hidden">
@@ -100,6 +110,7 @@
             <p id="noSegmentsMessage" class="text-gray-500 text-center mt-4">Chưa có đoạn văn bản nào được tải lên hoặc xử lý.</p>
         </div>
 
+        <!-- Phần nhập văn bản trực tiếp -->
         <div class="mb-6">
             <label for="textInput" class="block text-gray-700 text-sm font-semibold mb-2">Hoặc nhập văn bản trực tiếp:</label>
             <textarea id="textInput"
@@ -108,6 +119,7 @@
                       placeholder="Nhập văn bản bạn muốn chuyển thành giọng nói tại đây..."></textarea>
         </div>
 
+        <!-- Phần chọn ngôn ngữ -->
         <div class="mb-6">
             <label for="languageSelect" class="block text-gray-700 text-sm font-semibold mb-2">Chọn ngôn ngữ:</label>
             <select id="languageSelect"
@@ -123,25 +135,29 @@
             </select>
         </div>
 
+        <!-- Phần chọn giọng đọc -->
         <div class="mb-6">
             <label for="voiceSelect" class="block text-gray-700 text-sm font-semibold mb-2">Chọn giọng đọc:</label>
             <select id="voiceSelect"
                     class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <!-- Các tùy chọn giọng đọc sẽ được điền tự động bằng JavaScript dựa trên ngôn ngữ -->
+                <!-- Các tùy chọn giọng đọc sẽ được điền tự động bằng JavaScript dựa trên ngôn ngữ đã chọn -->
                 <option value="">Chọn một ngôn ngữ trước</option>
             </select>
         </div>
 
+        <!-- Nút chuyển đổi văn bản thành giọng nói -->
         <button id="convertButton"
                 class="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-300 ease-in-out flex items-center justify-center">
             <span id="buttonText">Chuyển đổi</span>
             <div id="loader" class="loader ml-2"></div>
         </button>
 
+        <!-- Hộp thông báo lỗi hoặc thành công -->
         <div id="messageBox" class="mt-4 p-3 bg-red-100 text-red-700 rounded-md hidden" role="alert">
-            <!-- Hộp thông báo lỗi -->
+            <!-- Nội dung thông báo sẽ được hiển thị tại đây -->
         </div>
 
+        <!-- Trình phát âm thanh -->
         <div class="mt-6">
             <label for="audioPlayer" class="block text-gray-700 text-sm font-semibold mb-2">Kết quả âm thanh:</label>
             <audio id="audioPlayer" controls class="w-full bg-gray-100 rounded-md p-2"></audio>
@@ -149,7 +165,8 @@
     </div>
 
     <script>
-        // Lấy các phần tử DOM cần thiết
+        // --- Khai báo các phần tử DOM ---
+        // Các phần tử chính cho chức năng chuyển đổi văn bản
         const textInput = document.getElementById('textInput');
         const languageSelect = document.getElementById('languageSelect');
         const voiceSelect = document.getElementById('voiceSelect'); 
@@ -159,7 +176,7 @@
         const loader = document.getElementById('loader');
         const buttonText = document.getElementById('buttonText');
 
-        // Các phần tử mới cho chức năng tải tệp
+        // Các phần tử liên quan đến chức năng tải lên và xử lý tệp
         const fileInput = document.getElementById('fileInput');
         const processFileButton = document.getElementById('processFileButton');
         const processFileButtonText = document.getElementById('processFileButtonText');
@@ -168,14 +185,20 @@
         const textSegmentsTableBody = document.getElementById('textSegmentsTableBody');
         const noSegmentsMessage = document.getElementById('noSegmentsMessage');
 
-        // URL của Serverless Function Vercel
+        // --- Cấu hình URL API ---
+        // URL của Serverless Function Vercel để chuyển đổi văn bản thành giọng nói
+        // Vercel tự động định tuyến các yêu cầu đến các file trong thư mục /api
         const API_FUNCTION_URL = '/api/synthesize'; 
-        // URL cho Serverless Function xử lý tệp (sẽ tạo sau)
+        // URL cho Serverless Function xử lý tệp (chưa được triển khai trong phiên bản này)
+        // Trong tương lai, đây sẽ là nơi gửi tệp để backend phân tích và lưu vào DB.
         const PROCESS_FILE_API_URL = '/api/process-file'; 
 
+        // --- Dữ liệu Giọng đọc ---
         // Danh sách các giọng đọc có sẵn cho từng ngôn ngữ (đơn giản hóa cho VoiceRSS)
+        // VoiceRSS thường chọn giọng mặc định dựa trên ngôn ngữ.
+        // Cấu trúc này giúp frontend hiển thị tùy chọn, dù voiceName không được VoiceRSS sử dụng chi tiết.
         const voices = {
-            'vi-vn': [ 
+            'vi-vn': [ // VoiceRSS sử dụng mã ngôn ngữ viết thường (ví dụ: 'vi-vn')
                 { name: 'vi-vn', gender: 'Mặc định (Tiếng Việt)' }
             ],
             'en-us': [
@@ -196,12 +219,19 @@
             'de-de': [
                 { name: 'de-de', gender: 'Mặc định (Tiếng Đức)' }
             ]
+            // Có thể thêm các ngôn ngữ khác mà VoiceRSS hỗ trợ tại đây
         };
 
-        // Hàm hiển thị thông báo lỗi
+        // --- Hàm tiện ích: Hiển thị và ẩn thông báo ---
+        /**
+         * Hiển thị một thông báo trên giao diện người dùng.
+         * @param {string} message - Nội dung thông báo.
+         * @param {boolean} isError - True nếu là thông báo lỗi, false nếu là thông báo thành công.
+         */
         function showMessage(message, isError = true) {
             messageBox.textContent = message;
-            messageBox.classList.remove('hidden');
+            messageBox.classList.remove('hidden'); // Hiển thị hộp thông báo
+            // Thay đổi màu nền và màu chữ tùy thuộc vào loại thông báo (lỗi/thành công)
             if (isError) {
                 messageBox.classList.remove('bg-green-100', 'text-green-700');
                 messageBox.classList.add('bg-red-100', 'text-red-700');
@@ -211,25 +241,34 @@
             }
         }
 
-        // Hàm ẩn thông báo
+        /**
+         * Ẩn hộp thông báo.
+         */
         function hideMessage() {
-            messageBox.classList.add('hidden');
+            messageBox.classList.add('hidden'); // Ẩn hộp thông báo
         }
 
-        // Hàm cập nhật danh sách giọng đọc khi ngôn ngữ thay đổi
+        // --- Hàm xử lý tùy chọn giọng đọc ---
+        /**
+         * Cập nhật danh sách các tùy chọn giọng đọc dựa trên ngôn ngữ đã chọn.
+         * Vì VoiceRSS Free Tier thường chỉ có một giọng mặc định cho mỗi ngôn ngữ,
+         * hàm này sẽ hiển thị tùy chọn "Mặc định".
+         */
         function updateVoiceOptions() {
             const selectedLanguage = languageSelect.value;
-            const availableVoices = voices[selectedLanguage] || [];
-            voiceSelect.innerHTML = ''; 
+            const availableVoices = voices[selectedLanguage] || []; // Lấy danh sách giọng đọc theo ngôn ngữ
+            voiceSelect.innerHTML = ''; // Xóa tất cả các tùy chọn hiện có
 
             if (availableVoices.length === 0) {
+                // Nếu không có giọng đọc nào cho ngôn ngữ này
                 const option = document.createElement('option');
                 option.value = '';
                 option.textContent = 'Không có giọng đọc cho ngôn ngữ này';
                 voiceSelect.appendChild(option);
-                voiceSelect.disabled = true;
+                voiceSelect.disabled = true; // Vô hiệu hóa dropdown giọng đọc
             } else {
-                voiceSelect.disabled = false;
+                voiceSelect.disabled = false; // Kích hoạt lại dropdown
+                // Thêm các tùy chọn giọng đọc vào dropdown
                 availableVoices.forEach(voice => {
                     const option = document.createElement('option');
                     option.value = voice.name;
@@ -239,17 +278,23 @@
             }
         }
 
-        // Hàm hiển thị các đoạn văn bản trong bảng
+        // --- Hàm hiển thị các đoạn văn bản trong bảng ---
+        /**
+         * Hiển thị các đoạn văn bản đã được phân tích từ tệp trong bảng.
+         * @param {Array<Object>} segments - Mảng các đối tượng đoạn văn bản ({ id, text }).
+         */
         function displayTextSegments(segments) {
-            textSegmentsTableBody.innerHTML = ''; // Xóa nội dung cũ
+            textSegmentsTableBody.innerHTML = ''; // Xóa nội dung bảng cũ
             if (segments && segments.length > 0) {
-                textSegmentsContainer.classList.remove('hidden');
-                noSegmentsMessage.classList.add('hidden');
+                textSegmentsContainer.classList.remove('hidden'); // Hiển thị container bảng
+                noSegmentsMessage.classList.add('hidden'); // Ẩn thông báo "Chưa có đoạn nào"
+                // Duyệt qua từng đoạn và thêm vào bảng
                 segments.forEach((segment, index) => {
                     const row = document.createElement('tr');
+                    // Tạo hàng bảng với checkbox, nội dung, số ký tự và nút "Nghe"
                     row.innerHTML = `
                         <td><input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded" checked data-segment-id="${index}"></td>
-                        <td class="text-sm text-gray-800">${segment.text.substring(0, 100)}...</td>
+                        <td class="text-sm text-gray-800">${segment.text.substring(0, 100)}...</td> <!-- Hiển thị 100 ký tự đầu tiên -->
                         <td class="text-sm text-gray-600">${segment.text.length}</td>
                         <td>
                             <button class="bg-blue-500 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded-md play-segment-btn" data-segment-id="${index}">Nghe</button>
@@ -258,70 +303,77 @@
                     textSegmentsTableBody.appendChild(row);
                 });
             } else {
-                textSegmentsContainer.classList.add('hidden');
-                noSegmentsMessage.classList.remove('hidden');
+                textSegmentsContainer.classList.add('hidden'); // Ẩn container bảng
+                noSegmentsMessage.classList.remove('hidden'); // Hiển thị thông báo "Chưa có đoạn nào"
             }
         }
 
-        // Lưu trữ các đoạn văn bản đã xử lý (tạm thời trong bộ nhớ)
+        // --- Biến lưu trữ trạng thái ---
+        // Lưu trữ các đoạn văn bản đã xử lý từ tệp (tạm thời trong bộ nhớ của trình duyệt)
         let processedSegments = [];
 
-        // Xử lý sự kiện khi nút "Xử lý tệp" được nhấp
+        // --- Xử lý sự kiện: Nút "Xử lý tệp" được nhấp ---
         processFileButton.addEventListener('click', async () => {
-            const file = fileInput.files[0];
-            hideMessage();
+            const file = fileInput.files[0]; // Lấy tệp đầu tiên được chọn
+            hideMessage(); // Ẩn mọi thông báo cũ
 
             if (!file) {
                 showMessage('Vui lòng chọn một tệp văn bản để xử lý.');
                 return;
             }
 
+            // Hiển thị trạng thái loading cho nút xử lý tệp
             processFileButton.disabled = true;
             fileLoader.style.display = 'block';
             processFileButtonText.textContent = 'Đang xử lý...';
-            processedSegments = []; // Xóa các đoạn cũ
+            processedSegments = []; // Xóa các đoạn cũ trước khi xử lý tệp mới
 
             try {
-                // Đọc nội dung tệp
+                // Đọc nội dung của tệp văn bản
                 const fileContent = await file.text();
                 
-                // Tạm thời, chúng ta sẽ chia văn bản thành các dòng.
-                // Trong phiên bản "chỉn chu", bạn sẽ gửi nội dung này đến Serverless Function
-                // để phân tích và lưu vào cơ sở dữ liệu.
-                const lines = fileContent.split('\n').filter(line => line.trim() !== '');
+                // --- Logic phân đoạn văn bản (hiện tại là frontend-side) ---
+                // Tạm thời, chúng ta sẽ chia văn bản thành các dòng và sau đó thành các đoạn nhỏ hơn.
+                // Trong một phiên bản "chỉn chu" và có khả năng mở rộng,
+                // bạn sẽ gửi toàn bộ nội dung tệp này đến một Serverless Function backend riêng (PROCESS_FILE_API_URL).
+                // Backend sẽ có nhiệm vụ phân tích, lưu vào cơ sở dữ liệu (ví dụ: MongoDB, Supabase),
+                // và trả về các ID/thông tin đoạn đã lưu cho frontend.
+                const lines = fileContent.split('\n').filter(line => line.trim() !== ''); // Chia thành các dòng không rỗng
                 
-                // Giới hạn số lượng ký tự mỗi đoạn để tránh lỗi API TTS
-                const MAX_SEGMENT_LENGTH = 4000; // VoiceRSS có thể có giới hạn riêng
+                // Giới hạn số lượng ký tự mỗi đoạn để tránh lỗi API TTS (VoiceRSS có thể có giới hạn riêng)
+                const MAX_SEGMENT_LENGTH = 4000; 
                 let currentSegment = '';
                 let segmentIndex = 0;
 
                 for (const line of lines) {
-                    if ((currentSegment + ' ' + line).length <= MAX_SEGMENT_LENGTH) {
-                        currentSegment += (currentSegment ? ' ' : '') + line;
+                    // Nếu thêm dòng hiện tại vào đoạn đang xây dựng mà không vượt quá giới hạn
+                    if ((currentSegment + (currentSegment ? ' ' : '') + line).length <= MAX_SEGMENT_LENGTH) {
+                        currentSegment += (currentSegment ? ' ' : '') + line; // Thêm dòng vào đoạn
                     } else {
+                        // Nếu vượt quá giới hạn, lưu đoạn hiện tại và bắt đầu đoạn mới
                         if (currentSegment) {
                             processedSegments.push({ id: segmentIndex++, text: currentSegment });
                         }
-                        currentSegment = line;
+                        currentSegment = line; // Bắt đầu đoạn mới với dòng hiện tại
                     }
                 }
+                // Thêm đoạn cuối cùng nếu có
                 if (currentSegment) {
                     processedSegments.push({ id: segmentIndex++, text: currentSegment });
                 }
 
-                // Hiển thị các đoạn văn bản đã xử lý
+                // Hiển thị các đoạn văn bản đã xử lý trong bảng giao diện
                 displayTextSegments(processedSegments);
                 showMessage(`Đã xử lý tệp "${file.name}" thành ${processedSegments.length} đoạn.`, false);
 
-                // Tạm thời, chúng ta không gửi đến backend ngay.
-                // Trong phiên bản chỉn chu, bạn sẽ gửi fileContent đến PROCESS_FILE_API_URL
+                // --- Ví dụ về cách gửi đến backend trong phiên bản chỉn chu (hiện đang comment) ---
                 // const response = await fetch(PROCESS_FILE_API_URL, {
                 //     method: 'POST',
                 //     headers: { 'Content-Type': 'application/json' },
                 //     body: JSON.stringify({ fileName: file.name, content: fileContent })
                 // });
                 // const data = await response.json();
-                // processedSegments = data.segments; // Giả định backend trả về các segments
+                // processedSegments = data.segments; // Giả định backend trả về các segments đã lưu
                 // displayTextSegments(processedSegments);
                 // showMessage(`Đã xử lý tệp "${file.name}" thành ${processedSegments.length} đoạn.`, false);
 
@@ -329,90 +381,95 @@
                 console.error('Lỗi khi xử lý tệp:', error);
                 showMessage(`Lỗi khi xử lý tệp: ${error.message}`);
             } finally {
+                // Ẩn trạng thái loading và kích hoạt lại nút
                 processFileButton.disabled = false;
                 fileLoader.style.display = 'none';
                 processFileButtonText.textContent = 'Xử lý tệp';
             }
         });
 
-        // Xử lý sự kiện khi nút "Chuyển đổi" được nhấp (đã có từ trước)
+        // --- Xử lý sự kiện: Nút "Chuyển đổi" được nhấp ---
         convertButton.addEventListener('click', async () => {
-            let textToConvert = textInput.value.trim();
+            let textToConvert = textInput.value.trim(); // Lấy văn bản từ ô nhập liệu trực tiếp
             
-            // Nếu có các đoạn văn bản đã xử lý và được chọn, ưu tiên chúng
+            // Kiểm tra xem có đoạn văn bản nào từ tệp đã được xử lý và chọn không
             const selectedSegments = Array.from(document.querySelectorAll('#textSegmentsTableBody input[type="checkbox"]:checked'))
                                           .map(checkbox => parseInt(checkbox.dataset.segmentId))
                                           .map(id => processedSegments.find(s => s.id === id));
 
             if (selectedSegments.length > 0) {
-                // Nối các đoạn văn bản đã chọn lại với nhau (có thể cần logic phức tạp hơn cho batch processing)
+                // Nếu có, ưu tiên nối các đoạn văn bản đã chọn lại để chuyển đổi
+                // (Lưu ý: Trong ứng dụng chỉn chu, bạn sẽ gửi từng đoạn riêng lẻ đến backend
+                // để backend xử lý từng đoạn và lưu trữ âm thanh riêng biệt, sau đó có thể ghép lại).
                 textToConvert = selectedSegments.map(s => s.text).join(' ');
-                // Trong một ứng dụng chỉn chu, bạn sẽ gửi từng đoạn riêng lẻ đến backend
-                // và backend sẽ xử lý từng đoạn, lưu trữ âm thanh riêng biệt.
             } else if (!textToConvert) {
+                // Nếu không có đoạn nào được chọn và ô nhập liệu trực tiếp cũng trống
                 showMessage('Vui lòng nhập văn bản hoặc chọn các đoạn văn bản đã xử lý để chuyển đổi.');
                 return;
             }
 
-            const languageCode = languageSelect.value;
-            const voiceName = voiceSelect.value; 
+            const languageCode = languageSelect.value; // Lấy mã ngôn ngữ đã chọn
+            const voiceName = voiceSelect.value; // Lấy tên giọng đọc đã chọn (VoiceRSS không dùng chi tiết)
 
-            hideMessage(); 
+            hideMessage(); // Ẩn mọi thông báo cũ
 
             if (!languageCode) { 
                 showMessage('Vui lòng chọn một ngôn ngữ.');
                 return;
             }
 
-            // Hiển thị loading và vô hiệu hóa nút
+            // Hiển thị trạng thái loading cho nút chuyển đổi
             convertButton.disabled = true;
             loader.style.display = 'block';
             buttonText.textContent = 'Đang chuyển đổi...';
-            audioPlayer.src = ''; 
+            audioPlayer.src = ''; // Xóa nguồn âm thanh cũ
 
             try {
-                // Gửi yêu cầu đến Vercel Serverless Function
+                // Gửi yêu cầu POST đến Serverless Function Vercel
                 const response = await fetch(API_FUNCTION_URL, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json' // Đặt header để backend biết đây là JSON
                     },
-                    body: JSON.stringify({ text: textToConvert, languageCode, voiceName }) 
+                    body: JSON.stringify({ text: textToConvert, languageCode, voiceName }) // Gửi dữ liệu dưới dạng JSON
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    // Nếu phản hồi không thành công (ví dụ: status 4xx, 5xx)
+                    const errorData = await response.json(); // Đọc dữ liệu lỗi từ phản hồi
                     throw new Error(errorData.error || 'Đã xảy ra lỗi khi chuyển đổi văn bản.');
                 }
 
-                const data = await response.json();
+                const data = await response.json(); // Đọc dữ liệu thành công từ phản hồi
                 if (data.audioContent) {
-                    // Tạo URL từ dữ liệu base64 và gán vào thẻ audio
+                    // Nếu có nội dung âm thanh (base64)
+                    // Tạo URL dữ liệu từ base64 và gán vào thẻ audio
                     audioPlayer.src = `data:audio/mpeg;base64,${data.audioContent}`;
-                    audioPlayer.play(); 
-                    showMessage('Chuyển đổi thành công!', false);
+                    audioPlayer.play(); // Tự động phát âm thanh
+                    showMessage('Chuyển đổi thành công!', false); // Hiển thị thông báo thành công
                 } else {
                     showMessage('Không nhận được nội dung âm thanh từ máy chủ.');
                 }
             } catch (error) {
-                console.error('Lỗi:', error);
-                showMessage(`Lỗi: ${error.message}`);
+                console.error('Lỗi:', error); // Ghi lỗi ra console để debug
+                showMessage(`Lỗi: ${error.message}`); // Hiển thị lỗi trên giao diện
             } finally {
-                // Ẩn loading và kích hoạt lại nút
+                // Ẩn trạng thái loading và kích hoạt lại nút
                 convertButton.disabled = false;
                 loader.style.display = 'none';
                 buttonText.textContent = 'Chuyển đổi';
             }
         });
 
-        // Xử lý sự kiện click nút "Nghe" trên từng đoạn
+        // --- Xử lý sự kiện: Nút "Nghe" trên từng đoạn văn bản được nhấp ---
         textSegmentsTableBody.addEventListener('click', async (event) => {
+            // Kiểm tra xem nút được nhấp có phải là nút "Nghe" không
             if (event.target.classList.contains('play-segment-btn')) {
-                const segmentId = parseInt(event.target.dataset.segmentId);
-                const segment = processedSegments.find(s => s.id === segmentId);
+                const segmentId = parseInt(event.target.dataset.segmentId); // Lấy ID đoạn văn bản
+                const segment = processedSegments.find(s => s.id === segmentId); // Tìm đoạn văn bản tương ứng
 
                 if (segment) {
-                    hideMessage();
+                    hideMessage(); // Ẩn mọi thông báo cũ
                     const languageCode = languageSelect.value;
                     const voiceName = voiceSelect.value; 
 
@@ -421,11 +478,12 @@
                         return;
                     }
 
-                    // Tạm thời vô hiệu hóa nút chính và hiển thị loading cho nút nghe
+                    // Hiển thị trạng thái loading cho nút "Nghe" cụ thể
                     event.target.disabled = true;
                     event.target.textContent = 'Đang tải...';
 
                     try {
+                        // Gửi yêu cầu đến Serverless Function để chuyển đổi đoạn văn bản này
                         const response = await fetch(API_FUNCTION_URL, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -448,6 +506,7 @@
                         console.error('Lỗi khi nghe đoạn:', error);
                         showMessage(`Lỗi khi nghe đoạn: ${error.message}`);
                     } finally {
+                        // Ẩn trạng thái loading và kích hoạt lại nút "Nghe"
                         event.target.disabled = false;
                         event.target.textContent = 'Nghe';
                     }
@@ -455,9 +514,10 @@
             }
         });
 
-
-        // Gọi hàm cập nhật giọng đọc khi trang tải và khi ngôn ngữ thay đổi
+        // --- Khởi tạo và Lắng nghe sự kiện ---
+        // Gọi hàm cập nhật giọng đọc khi trang tải lần đầu
         document.addEventListener('DOMContentLoaded', updateVoiceOptions);
+        // Lắng nghe sự kiện thay đổi ngôn ngữ để cập nhật giọng đọc
         languageSelect.addEventListener('change', updateVoiceOptions);
     </script>
 </body>
