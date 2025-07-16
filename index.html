@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuyển Văn Bản Thành Giọng Nói</title>
+    <!-- Tải Tailwind CSS từ CDN để dễ dàng tạo giao diện đẹp và responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Đảm bảo font Inter được sử dụng -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Màu nền nhẹ nhàng */
+        }
+        .container {
+            max-width: 800px; /* Giới hạn chiều rộng của nội dung chính */
+        }
+        textarea {
+            resize: vertical; /* Cho phép người dùng thay đổi kích thước chiều dọc của textarea */
+        }
+        /* Hiệu ứng loading */
+        .loader {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: none; /* Mặc định ẩn */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="container bg-white p-8 rounded-lg shadow-xl w-full">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Chuyển Văn Bản Thành Giọng Nói</h1>
+
+        <div class="mb-6">
+            <label for="textInput" class="block text-gray-700 text-sm font-semibold mb-2">Nhập văn bản của bạn:</label>
+            <textarea id="textInput"
+                      class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      rows="8"
+                      placeholder="Nhập văn bản bạn muốn chuyển thành giọng nói tại đây..."></textarea>
+        </div>
+
+        <div class="mb-6">
+            <label for="languageSelect" class="block text-gray-700 text-sm font-semibold mb-2">Chọn ngôn ngữ:</label>
+            <select id="languageSelect"
+                    class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="vi-vn">Tiếng Việt</option> 
+                <option value="en-us">Tiếng Anh (Mỹ)</option>
+                <option value="ja-jp">Tiếng Nhật</option>
+                <option value="ko-kr">Tiếng Hàn</option>
+                <option value="zh-cn">Tiếng Trung (Quan thoại)</option>
+                <option value="fr-fr">Tiếng Pháp</option>
+                <option value="de-de">Tiếng Đức</option>
+                <!-- Thêm các ngôn ngữ khác mà VoiceRSS hỗ trợ. Đảm bảo dùng định dạng mã ngôn ngữ của VoiceRSS (ví dụ: en-us, vi-vn) -->
+            </select>
+        </div>
+
+        <div class="mb-6">
+            <label for="voiceSelect" class="block text-gray-700 text-sm font-semibold mb-2">Chọn giọng đọc:</label>
+            <select id="voiceSelect"
+                    class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <!-- Các tùy chọn giọng đọc sẽ được điền tự động bằng JavaScript dựa trên ngôn ngữ -->
+                <option value="">Chọn một ngôn ngữ trước</option>
+            </select>
+        </div>
+
+        <button id="convertButton"
+                class="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-300 ease-in-out flex items-center justify-center">
+            <span id="buttonText">Chuyển đổi</span>
+            <div id="loader" class="loader ml-2"></div>
+        </button>
+
+        <div id="messageBox" class="mt-4 p-3 bg-red-100 text-red-700 rounded-md hidden" role="alert">
+            <!-- Hộp thông báo lỗi -->
+        </div>
+
+        <div class="mt-6">
+            <label for="audioPlayer" class="block text-gray-700 text-sm font-semibold mb-2">Kết quả âm thanh:</label>
+            <audio id="audioPlayer" controls class="w-full bg-gray-100 rounded-md p-2"></audio>
+        </div>
+    </div>
+
+    <script>
+        // Lấy các phần tử DOM cần thiết
+        const textInput = document.getElementById('textInput');
+        const languageSelect = document.getElementById('languageSelect');
+        const voiceSelect = document.getElementById('voiceSelect'); 
+        const convertButton = document.getElementById('convertButton');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const messageBox = document.getElementById('messageBox');
+        const loader = document.getElementById('loader');
+        const buttonText = document.getElementById('buttonText');
+
+        // URL của Serverless Function Vercel
+        // Vercel tự động tạo URL cho các hàm trong thư mục /api, ví dụ: /api/synthesize
+        const API_FUNCTION_URL = '/api/synthesize'; 
+
+        // Danh sách các giọng đọc có sẵn cho từng ngôn ngữ (đơn giản hóa cho VoiceRSS)
+        const voices = {
+            'vi-vn': [ 
+                { name: 'vi-vn', gender: 'Mặc định (Tiếng Việt)' }
+            ],
+            'en-us': [
+                { name: 'en-us', gender: 'Mặc định (Tiếng Anh Mỹ)' }
+            ],
+            'ja-jp': [
+                { name: 'ja-jp', gender: 'Mặc định (Tiếng Nhật)' }
+            ],
+            'ko-kr': [
+                { name: 'ko-kr', gender: 'Mặc định (Tiếng Hàn)' }
+            ],
+            'zh-cn': [
+                { name: 'zh-cn', gender: 'Mặc định (Tiếng Trung)' }
+            ],
+            'fr-fr': [
+                { name: 'fr-fr', gender: 'Mặc định (Tiếng Pháp)' }
+            ],
+            'de-de': [
+                { name: 'de-de', gender: 'Mặc định (Tiếng Đức)' }
+            ]
+        };
+
+        // Hàm hiển thị thông báo lỗi
+        function showMessage(message, isError = true) {
+            messageBox.textContent = message;
+            messageBox.classList.remove('hidden');
+            if (isError) {
+                messageBox.classList.remove('bg-green-100', 'text-green-700');
+                messageBox.classList.add('bg-red-100', 'text-red-700');
+            } else {
+                messageBox.classList.remove('bg-red-100', 'text-red-700');
+                messageBox.classList.add('bg-green-100', 'text-green-700');
+            }
+        }
+
+        // Hàm ẩn thông báo
+        function hideMessage() {
+            messageBox.classList.add('hidden');
+        }
+
+        // Hàm cập nhật danh sách giọng đọc khi ngôn ngữ thay đổi
+        function updateVoiceOptions() {
+            const selectedLanguage = languageSelect.value;
+            const availableVoices = voices[selectedLanguage] || [];
+            voiceSelect.innerHTML = ''; 
+
+            if (availableVoices.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Không có giọng đọc cho ngôn ngữ này';
+                voiceSelect.appendChild(option);
+                voiceSelect.disabled = true;
+            } else {
+                voiceSelect.disabled = false;
+                availableVoices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.name;
+                    option.textContent = `${voice.gender}`; 
+                    voiceSelect.appendChild(option);
+                });
+            }
+        }
+
+        // Gọi hàm cập nhật giọng đọc khi trang tải và khi ngôn ngữ thay đổi
+        document.addEventListener('DOMContentLoaded', updateVoiceOptions);
+        languageSelect.addEventListener('change', updateVoiceOptions);
+
+        // Xử lý sự kiện khi nút "Chuyển đổi" được nhấp
+        convertButton.addEventListener('click', async () => {
+            const text = textInput.value.trim();
+            const languageCode = languageSelect.value;
+            const voiceName = voiceSelect.value; 
+
+            hideMessage(); 
+
+            if (!text) {
+                showMessage('Vui lòng nhập văn bản để chuyển đổi.');
+                return;
+            }
+            if (!languageCode) { 
+                showMessage('Vui lòng chọn một ngôn ngữ.');
+                return;
+            }
+
+            // Hiển thị loading và vô hiệu hóa nút
+            convertButton.disabled = true;
+            loader.style.display = 'block';
+            buttonText.textContent = 'Đang chuyển đổi...';
+            audioPlayer.src = ''; 
+
+            try {
+                // Gửi yêu cầu đến Vercel Serverless Function
+                const response = await fetch(API_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text, languageCode, voiceName }) 
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Đã xảy ra lỗi khi chuyển đổi văn bản.');
+                }
+
+                const data = await response.json();
+                if (data.audioContent) {
+                    // Tạo URL từ dữ liệu base64 và gán vào thẻ audio
+                    audioPlayer.src = `data:audio/mpeg;base64,${data.audioContent}`;
+                    audioPlayer.play(); 
+                    showMessage('Chuyển đổi thành công!', false);
+                } else {
+                    showMessage('Không nhận được nội dung âm thanh từ máy chủ.');
+                }
+            } catch (error) {
+                console.error('Lỗi:', error);
+                showMessage(`Lỗi: ${error.message}`);
+            } finally {
+                // Ẩn loading và kích hoạt lại nút
+                convertButton.disabled = false;
+                loader.style.display = 'none';
+                buttonText.textContent = 'Chuyển đổi';
+            }
+        });
+    </script>
+</body>
+</html>
