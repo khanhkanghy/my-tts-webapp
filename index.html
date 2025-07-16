@@ -33,14 +33,75 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .table-container {
+            max-height: 300px; /* Giới hạn chiều cao của bảng để có thể cuộn */
+            overflow-y: auto; /* Cho phép cuộn dọc */
+            border: 1px solid #e2e8f0; /* Border cho container */
+            border-radius: 0.375rem; /* rounded-md */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse; /* Loại bỏ khoảng cách giữa các ô */
+        }
+        th, td {
+            padding: 0.75rem; /* p-3 */
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0; /* border-b */
+        }
+        th {
+            background-color: #f8fafc; /* bg-gray-50 */
+            font-weight: 600; /* font-semibold */
+            color: #4a5568; /* text-gray-700 */
+            position: sticky; /* Giữ tiêu đề bảng khi cuộn */
+            top: 0;
+            z-index: 10;
+        }
+        tbody tr:last-child td {
+            border-bottom: none; /* Loại bỏ border dưới cùng của hàng cuối */
+        }
+        tbody tr:hover {
+            background-color: #f0f4f8; /* Hiệu ứng hover */
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
     <div class="container bg-white p-8 rounded-lg shadow-xl w-full">
         <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Chuyển Văn Bản Thành Giọng Nói</h1>
 
+        <!-- Phần tải lên tệp -->
+        <div class="mb-6 border p-4 rounded-md bg-gray-50">
+            <label for="fileInput" class="block text-gray-700 text-sm font-semibold mb-2">Tải lên tệp văn bản (.txt):</label>
+            <input type="file" id="fileInput" accept=".txt" class="w-full text-gray-700">
+            <button id="processFileButton"
+                    class="mt-3 w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-300 ease-in-out flex items-center justify-center">
+                <span id="processFileButtonText">Xử lý tệp</span>
+                <div id="fileLoader" class="loader ml-2"></div>
+            </button>
+        </div>
+
+        <!-- Phần hiển thị danh sách đoạn văn bản -->
         <div class="mb-6">
-            <label for="textInput" class="block text-gray-700 text-sm font-semibold mb-2">Nhập văn bản của bạn:</label>
+            <label class="block text-gray-700 text-sm font-semibold mb-2">Các đoạn văn bản đã xử lý:</label>
+            <div id="textSegmentsContainer" class="table-container hidden">
+                <table class="min-w-full bg-white">
+                    <thead>
+                        <tr>
+                            <th class="w-1/12">Chọn</th>
+                            <th class="w-8/12">Nội dung</th>
+                            <th class="w-2/12">Ký tự</th>
+                            <th class="w-1/12">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="textSegmentsTableBody">
+                        <!-- Các đoạn văn bản sẽ được thêm vào đây bằng JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <p id="noSegmentsMessage" class="text-gray-500 text-center mt-4">Chưa có đoạn văn bản nào được tải lên hoặc xử lý.</p>
+        </div>
+
+        <div class="mb-6">
+            <label for="textInput" class="block text-gray-700 text-sm font-semibold mb-2">Hoặc nhập văn bản trực tiếp:</label>
             <textarea id="textInput"
                       class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       rows="8"
@@ -98,9 +159,19 @@
         const loader = document.getElementById('loader');
         const buttonText = document.getElementById('buttonText');
 
+        // Các phần tử mới cho chức năng tải tệp
+        const fileInput = document.getElementById('fileInput');
+        const processFileButton = document.getElementById('processFileButton');
+        const processFileButtonText = document.getElementById('processFileButtonText');
+        const fileLoader = document.getElementById('fileLoader');
+        const textSegmentsContainer = document.getElementById('textSegmentsContainer');
+        const textSegmentsTableBody = document.getElementById('textSegmentsTableBody');
+        const noSegmentsMessage = document.getElementById('noSegmentsMessage');
+
         // URL của Serverless Function Vercel
-        // Vercel tự động tạo URL cho các hàm trong thư mục /api, ví dụ: /api/synthesize
         const API_FUNCTION_URL = '/api/synthesize'; 
+        // URL cho Serverless Function xử lý tệp (sẽ tạo sau)
+        const PROCESS_FILE_API_URL = '/api/process-file'; 
 
         // Danh sách các giọng đọc có sẵn cho từng ngôn ngữ (đơn giản hóa cho VoiceRSS)
         const voices = {
@@ -168,22 +239,126 @@
             }
         }
 
-        // Gọi hàm cập nhật giọng đọc khi trang tải và khi ngôn ngữ thay đổi
-        document.addEventListener('DOMContentLoaded', updateVoiceOptions);
-        languageSelect.addEventListener('change', updateVoiceOptions);
+        // Hàm hiển thị các đoạn văn bản trong bảng
+        function displayTextSegments(segments) {
+            textSegmentsTableBody.innerHTML = ''; // Xóa nội dung cũ
+            if (segments && segments.length > 0) {
+                textSegmentsContainer.classList.remove('hidden');
+                noSegmentsMessage.classList.add('hidden');
+                segments.forEach((segment, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded" checked data-segment-id="${index}"></td>
+                        <td class="text-sm text-gray-800">${segment.text.substring(0, 100)}...</td>
+                        <td class="text-sm text-gray-600">${segment.text.length}</td>
+                        <td>
+                            <button class="bg-blue-500 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded-md play-segment-btn" data-segment-id="${index}">Nghe</button>
+                        </td>
+                    `;
+                    textSegmentsTableBody.appendChild(row);
+                });
+            } else {
+                textSegmentsContainer.classList.add('hidden');
+                noSegmentsMessage.classList.remove('hidden');
+            }
+        }
 
-        // Xử lý sự kiện khi nút "Chuyển đổi" được nhấp
+        // Lưu trữ các đoạn văn bản đã xử lý (tạm thời trong bộ nhớ)
+        let processedSegments = [];
+
+        // Xử lý sự kiện khi nút "Xử lý tệp" được nhấp
+        processFileButton.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            hideMessage();
+
+            if (!file) {
+                showMessage('Vui lòng chọn một tệp văn bản để xử lý.');
+                return;
+            }
+
+            processFileButton.disabled = true;
+            fileLoader.style.display = 'block';
+            processFileButtonText.textContent = 'Đang xử lý...';
+            processedSegments = []; // Xóa các đoạn cũ
+
+            try {
+                // Đọc nội dung tệp
+                const fileContent = await file.text();
+                
+                // Tạm thời, chúng ta sẽ chia văn bản thành các dòng.
+                // Trong phiên bản "chỉn chu", bạn sẽ gửi nội dung này đến Serverless Function
+                // để phân tích và lưu vào cơ sở dữ liệu.
+                const lines = fileContent.split('\n').filter(line => line.trim() !== '');
+                
+                // Giới hạn số lượng ký tự mỗi đoạn để tránh lỗi API TTS
+                const MAX_SEGMENT_LENGTH = 4000; // VoiceRSS có thể có giới hạn riêng
+                let currentSegment = '';
+                let segmentIndex = 0;
+
+                for (const line of lines) {
+                    if ((currentSegment + ' ' + line).length <= MAX_SEGMENT_LENGTH) {
+                        currentSegment += (currentSegment ? ' ' : '') + line;
+                    } else {
+                        if (currentSegment) {
+                            processedSegments.push({ id: segmentIndex++, text: currentSegment });
+                        }
+                        currentSegment = line;
+                    }
+                }
+                if (currentSegment) {
+                    processedSegments.push({ id: segmentIndex++, text: currentSegment });
+                }
+
+                // Hiển thị các đoạn văn bản đã xử lý
+                displayTextSegments(processedSegments);
+                showMessage(`Đã xử lý tệp "${file.name}" thành ${processedSegments.length} đoạn.`, false);
+
+                // Tạm thời, chúng ta không gửi đến backend ngay.
+                // Trong phiên bản chỉn chu, bạn sẽ gửi fileContent đến PROCESS_FILE_API_URL
+                // const response = await fetch(PROCESS_FILE_API_URL, {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify({ fileName: file.name, content: fileContent })
+                // });
+                // const data = await response.json();
+                // processedSegments = data.segments; // Giả định backend trả về các segments
+                // displayTextSegments(processedSegments);
+                // showMessage(`Đã xử lý tệp "${file.name}" thành ${processedSegments.length} đoạn.`, false);
+
+            } catch (error) {
+                console.error('Lỗi khi xử lý tệp:', error);
+                showMessage(`Lỗi khi xử lý tệp: ${error.message}`);
+            } finally {
+                processFileButton.disabled = false;
+                fileLoader.style.display = 'none';
+                processFileButtonText.textContent = 'Xử lý tệp';
+            }
+        });
+
+        // Xử lý sự kiện khi nút "Chuyển đổi" được nhấp (đã có từ trước)
         convertButton.addEventListener('click', async () => {
-            const text = textInput.value.trim();
+            let textToConvert = textInput.value.trim();
+            
+            // Nếu có các đoạn văn bản đã xử lý và được chọn, ưu tiên chúng
+            const selectedSegments = Array.from(document.querySelectorAll('#textSegmentsTableBody input[type="checkbox"]:checked'))
+                                          .map(checkbox => parseInt(checkbox.dataset.segmentId))
+                                          .map(id => processedSegments.find(s => s.id === id));
+
+            if (selectedSegments.length > 0) {
+                // Nối các đoạn văn bản đã chọn lại với nhau (có thể cần logic phức tạp hơn cho batch processing)
+                textToConvert = selectedSegments.map(s => s.text).join(' ');
+                // Trong một ứng dụng chỉn chu, bạn sẽ gửi từng đoạn riêng lẻ đến backend
+                // và backend sẽ xử lý từng đoạn, lưu trữ âm thanh riêng biệt.
+            } else if (!textToConvert) {
+                showMessage('Vui lòng nhập văn bản hoặc chọn các đoạn văn bản đã xử lý để chuyển đổi.');
+                return;
+            }
+
             const languageCode = languageSelect.value;
             const voiceName = voiceSelect.value; 
 
             hideMessage(); 
 
-            if (!text) {
-                showMessage('Vui lòng nhập văn bản để chuyển đổi.');
-                return;
-            }
             if (!languageCode) { 
                 showMessage('Vui lòng chọn một ngôn ngữ.');
                 return;
@@ -202,7 +377,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ text, languageCode, voiceName }) 
+                    body: JSON.stringify({ text: textToConvert, languageCode, voiceName }) 
                 });
 
                 if (!response.ok) {
@@ -229,6 +404,61 @@
                 buttonText.textContent = 'Chuyển đổi';
             }
         });
+
+        // Xử lý sự kiện click nút "Nghe" trên từng đoạn
+        textSegmentsTableBody.addEventListener('click', async (event) => {
+            if (event.target.classList.contains('play-segment-btn')) {
+                const segmentId = parseInt(event.target.dataset.segmentId);
+                const segment = processedSegments.find(s => s.id === segmentId);
+
+                if (segment) {
+                    hideMessage();
+                    const languageCode = languageSelect.value;
+                    const voiceName = voiceSelect.value; 
+
+                    if (!languageCode) { 
+                        showMessage('Vui lòng chọn một ngôn ngữ trước khi nghe đoạn này.');
+                        return;
+                    }
+
+                    // Tạm thời vô hiệu hóa nút chính và hiển thị loading cho nút nghe
+                    event.target.disabled = true;
+                    event.target.textContent = 'Đang tải...';
+
+                    try {
+                        const response = await fetch(API_FUNCTION_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ text: segment.text, languageCode, voiceName })
+                        });
+
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.error || 'Lỗi khi tạo âm thanh đoạn văn bản.');
+                        }
+
+                        const data = await response.json();
+                        if (data.audioContent) {
+                            audioPlayer.src = `data:audio/mpeg;base64,${data.audioContent}`;
+                            audioPlayer.play();
+                        } else {
+                            showMessage('Không nhận được nội dung âm thanh cho đoạn này.');
+                        }
+                    } catch (error) {
+                        console.error('Lỗi khi nghe đoạn:', error);
+                        showMessage(`Lỗi khi nghe đoạn: ${error.message}`);
+                    } finally {
+                        event.target.disabled = false;
+                        event.target.textContent = 'Nghe';
+                    }
+                }
+            }
+        });
+
+
+        // Gọi hàm cập nhật giọng đọc khi trang tải và khi ngôn ngữ thay đổi
+        document.addEventListener('DOMContentLoaded', updateVoiceOptions);
+        languageSelect.addEventListener('change', updateVoiceOptions);
     </script>
 </body>
 </html>
